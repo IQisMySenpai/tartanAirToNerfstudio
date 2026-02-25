@@ -39,7 +39,7 @@ It processes pose files, converts depth images (if needed), and generates a tran
 Run the script using tyro CLI:
 
 ```bash
-tartanToNerfstudio <base_path> [--pose-limit N] [--uniform] [--depth-conversion] [--camera-intrinsics {Air,Ground,Custom}] [--output-path OUTPUT]
+tartanToNerfstudio <base_path> [--pose-limit N] [--uniform] [--spatial-uniform] [--cube-size SIZE] [--depth-conversion] [--camera-intrinsics {Air,Ground,Custom}] [--output-path OUTPUT]
 ```
 
 #### Arguments:
@@ -48,10 +48,22 @@ tartanToNerfstudio <base_path> [--pose-limit N] [--uniform] [--depth-conversion]
 |----------------------|-----------|----------|-----------------------------------------------------------------------------------------------|
 | `base_path`          | Path      | Yes      | Path to the base folder of the TartanAir dataset.                                             |
 | `--pose-limit`, `-p` | int       | No       | Limit the number of poses to convert.                                                         |
-| `--uniform`, `-u`    | bool      | No       | Distribute selected poses uniformly instead of taking the first `n` poses (Default: `False`). |
+| `--uniform`, `-u`    | bool      | No       | Distribute selected poses uniformly along the trajectory instead of taking the first `n` poses (Default: `False`). |
+| `--spatial-uniform`, `-su` | bool | No      | Distribute poses **spatially** uniformly in 3D space using a cube subdivision of the scene (Default: `False`). |
+| `--cube-size`, `-cs` | float     | No       | Edge length (in meters) of the cubes used for spatial subdivision when `--spatial-uniform` is enabled (Default: `10.0`). |
 | `--depth-conversion`, `-d` | bool | No       | Convert depth images to `.npy` format (Default: `False`). Needed for Tartan Ground.           |
 | `--camera-intrinsics`, `-c` | Air/Ground/Custom | No | Camera intrinsics to use: `Air`, `Ground`, or `Custom` (Default: `Air`).                      |
 | `--output-path`, `-o`| Path      | No       | Output transforms file path (default: transforms.json in base folder).                        |
+
+### Spatially Uniform Pose Sampling
+
+When `--spatial-uniform` is enabled (and `--pose-limit` is set), all poses are first collected and then sampled so that the selected cameras are spread out **uniformly in 3D space**:
+
+- The scene bounds are estimated from all camera positions.
+- The space is subdivided into cubes of size `--cube-size` meters.
+- Each cube that contains cameras contributes a roughly equal number of poses (up to the requested limit), ensuring good spatial coverage of the scene.
+
+Note that `--uniform` (temporal / index-based sampling) and `--spatial-uniform` are **mutually exclusive**; only one of them can be used at a time.
 
 ### Example
 
